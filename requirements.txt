@@ -1,0 +1,9 @@
+requests
+openai
+sounddevice
+openai-whisper
+wavio
+gtts
+playsound
+TTS
+PyObjC
