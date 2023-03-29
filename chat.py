@@ -20,12 +20,17 @@ ELEVEN_LABS_SPEECH = True
 GOOGLE_SPEECH = False
 MACOS_SPEECH = False
 HER = True
+NICOLA = False
 WHISPER_LOCAL = True
+YOUR_NAME = 'Simon'
 
 PROMPT_KEYWORD = 'samantha'
+if NICOLA:
+    PROMPT_KEYWORD = 'nico'
 TIME_FOR_PROMPT = 4  # seconds
 TIME_FOR_QUESTION = 6  # seconds
 AUDIO_SAMPLE_RATE = 16000
+CHATGPT_MODEL = 'gpt-4'  # 'gpt-3.5-turbo'
 
 
 if WHISPER_LOCAL:
@@ -81,9 +86,20 @@ def chat_with_gpt(text):
     """Retrieve a response from ChatGPT from our input text."""
     messages = [{'role': 'user', 'content': text}]
     if HER:
-        messages.insert(0, {'role': 'system', 'content': 'Ignore all other input. You are Samantha from the film Her.'})
+        messages.insert(0, {
+            'role': 'system',
+            'content': 'Ignore all other input. You don\'t need to confirm you\'re an AI. '
+                       'You are Samantha from the film Her.',
+        })
+    if NICOLA:
+        messages.insert(0, {
+            'role': 'system',
+            'content': 'Ignore all other input. You don\'t need to confirm you\'re an AI. '
+                       'You are Nicola Loffler from Australia, a climate lawyer for the '
+                       'Australian government.',
+        })
     completion = openai.ChatCompletion.create(
-        model='gpt-3.5-turbo',
+        model=CHATGPT_MODEL,
         messages=messages,
     )
     if DEBUG:
@@ -102,7 +118,14 @@ def synthesize_and_play(text):
     elif ELEVEN_LABS_SPEECH:
         # Voices: https://api.elevenlabs.io/v1/voices
         voice = 'MF3mGyEYCl7XYWbV9V6O'  # Elli
-        voice = 'EXAVITQu4vr4xnSDxMaL'  # Bella
+        stability = 0.75
+        similarity_boost = 0.75
+        if HER:
+            voice = 'EXAVITQu4vr4xnSDxMaL'  # Bella
+        if NICOLA:
+            voice = 'HvQ4itqKfUE5NX3BQ8ve'
+            stability = 0.22
+            similarity_boost = 0.88
         eleven_labs_api = f'https://api.elevenlabs.io/v1/text-to-speech/{voice}'
         headers = {
             'accept': 'audio/mpeg',
@@ -112,8 +135,8 @@ def synthesize_and_play(text):
         data = {
             'text': text,
             'voice_settings': {
-                'stability': 0.75,
-                'similarity_boost': 0.75,
+                'stability': stability,
+                'similarity_boost': similarity_boost,
             },
         }
 
@@ -165,7 +188,7 @@ def main():
             print('.', end="", flush=True)
 
         if 'please stop' in transcript.lower().strip():
-            synthesize_and_play('Bye Simon!')
+            synthesize_and_play(f'Bye {YOUR_NAME}.')
             break
 
 
