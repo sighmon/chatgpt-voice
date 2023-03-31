@@ -1,6 +1,8 @@
 import os
 import requests
+import time
 
+import numpy
 import openai
 import sounddevice
 import subprocess
@@ -30,7 +32,13 @@ if NICOLA:
 TIME_FOR_PROMPT = 4  # seconds
 TIME_FOR_QUESTION = 6  # seconds
 AUDIO_SAMPLE_RATE = 16000
+SILENCE_LIMIT = AUDIO_SAMPLE_RATE // 4  # 0.25 seconds of silence
 CHATGPT_MODEL = 'gpt-4'  # 'gpt-3.5-turbo'
+
+# Globals for silence calculations
+silent_frames_count = 0
+is_recording = True
+recorded_audio = []
 
 
 if WHISPER_LOCAL:
@@ -65,6 +73,49 @@ def record_audio(duration, sample_rate):
     with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
         wavio.write(tmp_file.name, recording, sample_rate, sampwidth=2)
     return recording, tmp_file
+
+
+def is_silent(audio_data, threshold_dB=-40):
+    """Check recorded audio to see if the rms dB is below a threshold."""
+    rms_dB = 20 * numpy.log10(numpy.sqrt(numpy.mean(audio_data ** 2)))
+    return rms_dB < threshold_dB
+
+
+def callback(indata, frames, time, status):
+    """Audio input stream callback to check for silence."""
+    global is_recording, silent_frames_count, recorded_audio
+
+    if is_silent(indata[:, 0]):
+        silent_frames_count += 1
+    else:
+        silent_frames_count = 0
+
+    if silent_frames_count > SILENCE_LIMIT:
+        is_recording = False
+
+    if is_recording:
+        recorded_audio.append(indata.copy())
+
+
+def record_audio_until_silence(sample_rate, recorded_audio):
+    """Record audio using the computer's default sound device until there is silence."""
+    with sounddevice.InputStream(
+        samplerate=sample_rate,
+        channels=1,
+        dtype='float32',
+        callback=callback,
+    ):
+        if DEBUG:
+            print('Recording started... ', end='', flush=True)
+        while is_recording:
+            time.sleep(0.1)
+
+    recorded_audio = numpy.concatenate(recorded_audio, axis=0)
+    if DEBUG:
+        print('finished.')
+    with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
+        wavio.write(tmp_file.name, recorded_audio, sample_rate, sampwidth=2)
+    return recorded_audio, tmp_file
 
 
 def transcribe_audio(audio, tmp_file):
@@ -176,7 +227,7 @@ def main():
             synthesize_and_play(hello_message)
             if DEBUG:
                 print(f' {hello_message}')
-            audio, tmp_file = record_audio(TIME_FOR_QUESTION, AUDIO_SAMPLE_RATE)
+            audio, tmp_file = record_audio_until_silence(AUDIO_SAMPLE_RATE, recorded_audio)
             message = transcribe_audio(audio, tmp_file)
             response = chat_with_gpt(message)
             os.remove(tmp_file.name)
