@@ -31,7 +31,7 @@ if NICOLA:
     PROMPT_KEYWORD = 'nico'
 TIME_FOR_PROMPT = 4  # seconds
 AUDIO_SAMPLE_RATE = 16000
-SILENCE_LIMIT = AUDIO_SAMPLE_RATE // 4  # 0.25 seconds of silence
+SILENCE_LIMIT = AUDIO_SAMPLE_RATE // 2  # 0.5 seconds of silence
 CHATGPT_MODEL = 'gpt-4'  # 'gpt-3.5-turbo'
 
 
@@ -60,7 +60,7 @@ class Audio:
         self.audio_file = tmp_file
         return self.recorded_audio, self.audio_file
 
-    def is_silent(self, audio_data, threshold_dB=-40):
+    def is_silent(self, audio_data, threshold_dB=-30):
         """Check recorded audio to see if the rms dB is below a threshold."""
         rms_dB = 20 * numpy.log10(numpy.sqrt(numpy.mean(audio_data ** 2)))
         return rms_dB < threshold_dB
@@ -245,9 +245,13 @@ def main():
             while openai.in_conversation:
                 audio.record_audio_until_silence()
                 transcript = openai.transcribe_audio(audio.recorded_audio, audio.audio_file)
-                if 'end conversation' in transcript.lower().strip():
-                    audio.synthesize_and_play('Conversation ended.')
+                if 'pause conversation' in transcript.lower().strip():
+                    audio.synthesize_and_play('Conversation paused.')
                     openai.in_conversation = False
+                    break
+                elif 'end conversation' in transcript.lower().strip():
+                    audio.synthesize_and_play('Conversation ended.')
+                    openai = OpenAI()
                     break
                 response = openai.chat_with_gpt(transcript)
                 audio.recorded_audio = []
