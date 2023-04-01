@@ -9,7 +9,9 @@ By default it emulates Samantha from the movie [Her](https://www.imdb.com/title/
 * OpenAI Whisper running locally listens for a keyword in every 4 seconds of audio
 * When it hears that keyword it listens for your question
 * That question is sent to ChatGPT
-* ChatGPT's response is synthesised into speech
+* ChatGPT's response is synthesised into speech, and saved into a conversation history
+* You can end a conversation with the keywords `end conversation` or pause it with `pause conversation`
+* You can then start fresh or resume your conversation by saying the prompt keyword again
 
 ## Installation
 
