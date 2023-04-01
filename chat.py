@@ -263,8 +263,8 @@ def main():
         else:
             print('.', end="", flush=True)
 
-        if 'please stop' in transcript.lower().strip():
-            audio.synthesize_and_play(f'Bye {YOUR_NAME}.')
+        if 'goodnight' in transcript.lower().strip():
+            audio.synthesize_and_play(f'Goodnight {YOUR_NAME}.')
             break
 
 
