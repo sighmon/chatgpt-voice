@@ -7,7 +7,7 @@ By default it emulates Samantha from the movie [Her](https://www.imdb.com/title/
 ## How it works
 
 * OpenAI Whisper running locally listens for a keyword in every 4 seconds of audio
-* When it hears that keyword it listens to a 6 second question
+* When it hears that keyword it listens for your question
 * That question is sent to ChatGPT
 * ChatGPT's response is synthesised into speech
 
@@ -30,7 +30,7 @@ By default it emulates Samantha from the movie [Her](https://www.imdb.com/title/
 
 * After activating your environment, run: `python chat.py`
 * First say the keyword, which by default is `samantha`
-* Then you have 6 seconds to ask a question
+* Then ask your question
 
 ### Options
 
