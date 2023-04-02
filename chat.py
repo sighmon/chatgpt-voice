@@ -27,6 +27,7 @@ WHISPER_LOCAL = True
 YOUR_NAME = 'Simon'
 
 PROMPT_KEYWORD = 'samantha'
+EXIT_KEYWORDS = ['goodnight', 'good night']
 if NICOLA:
     PROMPT_KEYWORD = 'nico'
 TIME_FOR_PROMPT = 4  # seconds
@@ -263,7 +264,7 @@ def main():
         else:
             print('.', end="", flush=True)
 
-        if 'goodnight' in transcript.lower().strip():
+        if any(map(transcript.lower().strip().__contains__, EXIT_KEYWORDS)):
             audio.synthesize_and_play(f'Goodnight {YOUR_NAME}.')
             break
 
