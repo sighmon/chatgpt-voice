@@ -9,11 +9,13 @@ help:
 	@echo 'Grouped commands:'
 	@echo ' linttest         - Run lint and test'
 lint:
-	pylint ./chat.py
-	flake8 ./chat.py
-	isort .
+	source ./venv/bin/activate; \
+	./venv/bin/pylint ./chat.py; \
+	./venv/bin/flake8 ./chat.py; \
+	./venv/bin/isort .
 test:
-	pytest -v -s tests.py
+	source ./venv/bin/activate; \
+	./venv/bin/pytest -v -s tests.py
 build:
 	virtualenv venv; \
 	source ./venv/bin/activate; \

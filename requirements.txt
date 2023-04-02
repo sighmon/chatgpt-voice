@@ -12,3 +12,4 @@ PyObjC
 pytest
 pylint
 flake8
+isort
