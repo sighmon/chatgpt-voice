@@ -7,3 +7,9 @@ gtts
 playsound
 TTS
 PyObjC
+
+# Test and lint
+pytest
+pylint
+flake8
+isort
