@@ -1,21 +1,20 @@
+"""A ChatGPT voice assistant."""
 import os
-import requests
+import platform
+import subprocess
+import tempfile
 import time
+import warnings
 
 import numpy
 import openai
+import requests
 import sounddevice
-import subprocess
-import whisper
 import wavio
-import tempfile
-import platform
-import warnings
-
+import whisper
 from gtts import gTTS
 from playsound import playsound
 from TTS.api import TTS
-
 
 DEBUG = True
 ELEVEN_LABS_SPEECH = True
@@ -61,12 +60,12 @@ class Audio:
         self.audio_file = tmp_file
         return self.recorded_audio, self.audio_file
 
-    def is_silent(self, audio_data, threshold_dB=-30):
+    def is_silent(self, audio_data, threshold_db=-30):
         """Check recorded audio to see if the rms dB is below a threshold."""
-        rms_dB = 20 * numpy.log10(numpy.sqrt(numpy.mean(audio_data ** 2)))
-        return rms_dB < threshold_dB
+        rms_db = 20 * numpy.log10(numpy.sqrt(numpy.mean(audio_data ** 2)))
+        return rms_db < threshold_db
 
-    def callback(self, indata, frames, time, status):
+    def callback(self, indata, _, __, ___):
         """Audio input stream callback to check for silence."""
         if self.is_silent(indata[:, 0]):
             self.silent_frames_count += 1
@@ -137,7 +136,7 @@ class Audio:
                 },
             }
 
-            response = requests.post(eleven_labs_api, headers=headers, json=data)
+            response = requests.post(eleven_labs_api, headers=headers, json=data, timeout=240)
             with tempfile.NamedTemporaryFile(suffix='.mp3', delete=True) as file_path:
                 file_path.write(response.content)
                 playsound(file_path.name)
@@ -194,13 +193,13 @@ class OpenAI:
         self.openai_client.organisation = os.getenv('OPENAI_ORG')
         self.openai_client.api_key = os.getenv('OPENAI_API_KEY')
 
-    def transcribe_audio(self, audio, tmp_file):
+    def transcribe_audio(self, tmp_file):
         """Transcribe the audio recording using OpenAI Whisper, locally or via API."""
         if self.whisper_client:
             self.transcript = self.whisper_client.transcribe(tmp_file.name)
         else:
-            audio_file = open(tmp_file.name, 'rb')
-            self.transcript = self.openai_client.Audio.transcribe('whisper-1', audio_file)
+            with open(tmp_file.name, 'rb') as audio_file:
+                self.transcript = self.openai_client.Audio.transcribe('whisper-1', audio_file)
         segments = self.transcript.get('segments')
         if segments and segments[0]['no_speech_prob'] > 0.5:
             return ''
@@ -225,12 +224,12 @@ class OpenAI:
 def main():
     """Listen for the keyword prompt, and send our voice transcript to ChatGPT."""
     audio = Audio()
-    openai = OpenAI()
+    openai_client = OpenAI()
     print('Listening...', end='', flush=True)
 
     while True:
         audio.record_audio(TIME_FOR_PROMPT, AUDIO_SAMPLE_RATE)
-        transcript = openai.transcribe_audio(audio.recorded_audio, audio.audio_file)
+        transcript = openai_client.transcribe_audio(audio.audio_file)
         os.remove(audio.audio_file.name)
 
         if DEBUG:
@@ -242,19 +241,19 @@ def main():
             if DEBUG:
                 print(f' {hello_message}')
 
-            openai.in_conversation = True
-            while openai.in_conversation:
+            openai_client.in_conversation = True
+            while openai_client.in_conversation:
                 audio.record_audio_until_silence()
-                transcript = openai.transcribe_audio(audio.recorded_audio, audio.audio_file)
+                transcript = openai_client.transcribe_audio(audio.audio_file)
                 if 'pause conversation' in transcript.lower().strip():
                     audio.synthesize_and_play('Conversation paused.')
-                    openai.in_conversation = False
+                    openai_client.in_conversation = False
                     break
-                elif 'end conversation' in transcript.lower().strip():
+                if 'end conversation' in transcript.lower().strip():
                     audio.synthesize_and_play('Conversation ended.')
-                    openai = OpenAI()
+                    openai_client = OpenAI()
                     break
-                response = openai.chat_with_gpt(transcript)
+                response = openai_client.chat_with_gpt(transcript)
                 audio.recorded_audio = []
                 os.remove(audio.audio_file.name)
                 if DEBUG:

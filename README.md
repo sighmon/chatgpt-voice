@@ -16,6 +16,13 @@ By default it emulates Samantha from the movie [Her](https://www.imdb.com/title/
 ## Installation
 
 * Install virtualenv: `pip install virtualenv`
+* Build the virtual environment: `make build`
+* Fill in the `.envrc` file with your API keys
+* Start the voice chat: `make up`
+
+### Manual installation
+
+* Install virtualenv: `pip install virtualenv`
 * Create a virtual environment: `virtualenv venv`
 * Activate your environment: `source venv/bin/activate`
 * Install the Python dependencies: `pip install -r requirements.txt`
@@ -33,6 +40,7 @@ By default it emulates Samantha from the movie [Her](https://www.imdb.com/title/
 * After activating your environment, run: `python chat.py`
 * First say the keyword, which by default is `samantha`
 * Then ask your question
+* Deactivate your virtual environment with: `deactivate`
 
 ### Options
 
