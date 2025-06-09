@@ -4,9 +4,18 @@ sounddevice
 openai-whisper
 wavio
 gtts
-playsound
+playsound==1.2.2
 TTS
 PyObjC
+elevenlabs
+
+# LangChain
+langchain
+langgraph
+langchain-community
+langchain-openai
+langchain-ollama
+duckduckgo-search
 
 # Test and lint
 pytest
